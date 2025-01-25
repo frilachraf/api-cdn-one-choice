@@ -10,15 +10,20 @@ class FileController extends Controller
 {
 
     public function upload(Request $request)
-    {
-        $request->validate([
-            'file' => 'required|file|max:20480', // 20MB limit
-        ]);
+{
+    $request->validate([
+        'files' => 'required|array', // Ensure 'files' is an array
+        'files.*' => 'file|max:20480', // Validate each file in the array
+    ]);
+ 
+    $uploadedFiles = $request->file('files');
+    $fileRecords = [];
 
-        $file = $request->file('file');
-        $path = $file->store('uploads'); // Store in 'storage/app/uploads'
+    foreach ($uploadedFiles as $file) {
+        $path = $file->store('images', 'public'); // Store each file in 'storage/app/public/images'
         $type = $file->getMimeType();
         $size = $file->getSize();
+        $url = Storage::url($path);
 
         // Save file details to the database
         $fileRecord = File::create([
@@ -26,13 +31,22 @@ class FileController extends Controller
             'path' => $path,
             'type' => $type,
             'size' => $size,
+            'url' => $url
         ]);
 
-        return response()->json([
+        $fileRecords[] = [
             'success' => true,
             'data' => $fileRecord,
-        ], 201);
+            'url' => asset($url)
+        ];
     }
+
+    return response()->json([
+        'success' => true,
+        'files' => $fileRecords
+    ], 201);
+}
+
 
     // List All Files
     public function index()
@@ -71,4 +85,5 @@ class FileController extends Controller
 
         return response()->json(['message' => 'File deleted successfully']);
     }
+
 }

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('path');
             $table->string('type');
             $table->bigInteger('size');
-
+            $table->string('url');
             $table->timestamps();
         });
     }
@@ -29,4 +29,4 @@ return new class extends Migration
     {
         Schema::dropIfExists('files');
     }
-};
+}; 

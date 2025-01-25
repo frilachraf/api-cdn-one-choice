@@ -8,6 +8,6 @@ class File extends Model
 {
     //
     protected $table="files";
-    public $fillable = ['name','path','type','size'];
-    
+    public $fillable = ['name','path','type','size','url'];
+
 }
