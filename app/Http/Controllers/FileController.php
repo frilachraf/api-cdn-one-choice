@@ -9,18 +9,51 @@ use Illuminate\Support\Facades\Storage;
 class FileController extends Controller
 {
 
-    public function upload(Request $request)
-{
-    $request->validate([
-        'files' => 'required|array', // Ensure 'files' is an array
-        'files.*' => 'file|max:20480', // Validate each file in the array
-    ]);
- 
-    $uploadedFiles = $request->file('files');
-    $fileRecords = [];
+    public function uploadMultipleFiles(Request $request)
+    {
+        $request->validate([
+            'files' => 'required|array', // Ensure 'files' is an array
+            'files.*' => 'file|max:20480', // Validate each file in the array
+        ]);
 
-    foreach ($uploadedFiles as $file) {
-        $path = $file->store('images', 'public'); // Store each file in 'storage/app/public/images'
+        $uploadedFiles = $request->file('files');
+        $fileRecords = [];
+
+        foreach ($uploadedFiles as $file) {
+            $path = $file->store('images', 'public'); // Store each file in 'storage/app/public/images'
+            $type = $file->getMimeType();
+            $size = $file->getSize();
+            $url = Storage::url($path);
+
+            // Save file details to the database
+            $fileRecord = File::create([
+                'name' => $file->getClientOriginalName(),
+                'path' => $path,
+                'type' => $type,
+                'size' => $size,
+                'url' => $url
+            ]);
+
+            $fileRecords[] = [
+                'success' => true,
+                'data' => $fileRecord,
+                'url' => asset($url)
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'files' => $fileRecords
+        ], 201);
+    }
+
+    public function uploadSingleFile(Request $request){
+        $request->validate([
+            'file' => 'required|file|max:20480', // Validate a single file
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->store('images', 'public'); // Store file in 'storage/app/public/images'
         $type = $file->getMimeType();
         $size = $file->getSize();
         $url = Storage::url($path);
@@ -34,19 +67,12 @@ class FileController extends Controller
             'url' => $url
         ]);
 
-        $fileRecords[] = [
+        return response()->json([
             'success' => true,
             'data' => $fileRecord,
             'url' => asset($url)
-        ];
+        ], 201);
     }
-
-    return response()->json([
-        'success' => true,
-        'files' => $fileRecords
-    ], 201);
-}
-
 
     // List All Files
     public function index()
